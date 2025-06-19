@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for devflow-ai-task-manager on 2025-06-16T11:07:38-03:00
+# fly.toml app configuration file generated for ai-task-manager-still-flower-7488 on 2025-06-17T20:57:58-03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'devflow-ai-task-manager'
+app = 'ai-task-manager-still-flower-7488'
 primary_region = 'gru'
 
 [build]
@@ -11,8 +11,15 @@ primary_region = 'gru'
 [processes]
   app = 'npm run start'
 
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = '1GB'
+  auto_extend_size_limit = '10GB'
+
 [http_service]
-  internal_port = 8080
+  internal_port = 3000
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true

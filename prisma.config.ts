@@ -1,9 +1,8 @@
+import 'dotenv/config';
+
 import path from 'node:path';
 import { defineConfig } from 'prisma/config';
 import { PrismaLibSQL } from '@prisma/adapter-libsql';
-
-// import your .env file
-import 'dotenv/config';
 
 type Env = {
   TURSO_DATABASE_URL: string;
@@ -17,8 +16,8 @@ export default defineConfig<Env>({
   migrate: {
     async adapter(env) {
       return new PrismaLibSQL({
-        url: env.TURSO_DATABASE_URL,
-        authToken: env.TURSO_AUTH_TOKEN,
+        url: env.TURSO_DATABASE_URL!,
+        authToken: env.TURSO_AUTH_TOKEN!,
       });
     },
   },
