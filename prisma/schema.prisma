@@ -32,6 +32,17 @@ model Post {
   @@map("posts")
 }
 
+model Chat {
+  id         String   @id @default(uuid())
+  title      String?
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  task       Task?
+
+  @@map("chats")
+}
+
 model Task {
   id                        String   @id @default(uuid())
   title                     String
@@ -45,6 +56,8 @@ model Task {
   chat_history              String? // Stored as JSON string
   created_at                DateTime @default(now())
   updated_at                DateTime @updatedAt
+  chat                      Chat     @relation(fields: [chat_id], references: [id])
+  chat_id                   String   @unique
 
   @@map("tasks")
 }

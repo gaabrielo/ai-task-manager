@@ -1,88 +1,83 @@
-import type React from 'react';
-
-import { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card';
+import { Card, CardContent, CardFooter } from '~/components/ui/card';
 import { ScrollArea } from '~/components/ui/scroll-area';
-import { Send } from 'lucide-react';
+import { CircleCheckIcon, CopyIcon, Send, TrashIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
+import type { ChatMessage } from '~/features/tasks/types';
+import { useFetcher, useLoaderData, useSubmit } from 'react-router';
+import type { loader } from '~/routes/task-new';
+import { IconDots } from '@tabler/icons-react';
+import {
+  DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuGroup,
+} from '~/components/ui/dropdown-menu';
+import { cn } from '~/lib/utils';
+import { toast } from 'sonner';
 
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'bot';
-  timestamp: Date;
-}
+const defaultMessage: ChatMessage = {
+  id: 'default',
+  content:
+    "Hello! I'm your AI task-management assistant. Share as many details as you can, and I'll provide a clear, step-by-step plan to complete your task.",
+  role: 'bot',
+  timestamp: new Date(),
+};
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content:
-        "Hello! I'm a simple chatbot. I'll respond with the same message no matter what you say! I know, I'm kinda useless, but I'm here to help you with your questions. Or maybe I'll just be a bit of a dick and make fun of you. It's up to you. So, what do you want to talk about? You fucking stupid little bitch. I love you.",
-      role: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const defaultBotResponse = ` ⣿⣿⣿⣿⡷⠀⢠⣄⡿⢣⣄⡸⢀⣤⣶⣾⣿⣿⣿⣿⣿⣿⣷⣶⣭⡳⣶⣦⣤⣤ ⣿⡿⣿⣿⠃⠀⠿⢟⣲⣿⢏⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡈⢿⣿ ⣿⣿⣶⡆⢀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡹ ⣿⣿⢿⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢷ ⢟⣽⣿⣿⣿⣿⣿⣿⣿⣿⡜⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⣿⣿⣿⣿⣿⡎ ⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠘⣿⣿⣿⣿⣿⣿⣿⣿⡿⠟⣡⣾⣿⣿⣿⣿⣿⣿ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢈⣛⠻⣿⣿⠿⢛⣩⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⢻⣿⣷⣄⠰⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ ⣿⣿⣿⡿⠿⠿⠛⠿⠿⠟⠁⠀⢸⣧⠹⣿⣧⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ ⣿⣿⣿⣷⣶⣿⣿⣷⣶⣶⣶⣶⡌⠻⣧⡘⢿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣈⠁⣀⡀⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!input.trim()) return;
-
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input.trim(),
-      role: 'user',
-      timestamp: new Date(),
-    };
-
-    // Add bot response
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: defaultBotResponse,
-      role: 'bot',
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage, botMessage]);
-    setInput('');
-  };
+  const { chatId, messages: messagesHistory } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher();
+  const isLoading = fetcher.state !== 'idle';
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  return (
-    // from-blue-50 to-indigo-500
-    <Card className="h-full w-full flex flex-col gap-0 p-0 shadow-none overflow-clip relative overflow-y-auto">
-      {/* <CardHeader className="rounded-t-lg border-b">
-        <CardTitle className="text-xl font-bold">Chat assistant</CardTitle>
-      </CardHeader> */}
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
+  const clearMessageField = () => {
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+    clearMessageField();
+  }, [messages]);
+
+  useEffect(() => {
+    const updatedMessages = [defaultMessage, ...messagesHistory];
+    setMessages(updatedMessages);
+  }, [messagesHistory]);
+
+  return (
+    <Card className="h-full w-full flex flex-col gap-0 p-0 shadow-none overflow-clip relative overflow-y-auto">
       <CardContent className="flex-1 p-0 pt-0 overflow-y-auto">
         <ScrollArea className="h-full px-4">
           <div className="space-y-4 my-4">
-            {messages.map((message) => (
+            {messages.map((message, msgIndex) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                className={`flex group gap-2 transition-all ${
+                  message.role === 'user'
+                    ? 'justify-items-end flex-row-reverse'
+                    : 'justify-start'
                 }`}
+                ref={msgIndex === messages.length - 1 ? messagesEndRef : null}
               >
                 {message.role === 'bot' && (
-                  <Avatar className="mr-2">
+                  <Avatar>
                     <AvatarFallback className="text-sm">Ai</AvatarFallback>
                   </Avatar>
                 )}
@@ -101,9 +96,12 @@ export default function ChatInterface() {
                         : 'text-gray-500'
                     }`}
                   >
-                    {formatTime(message.timestamp)}
+                    {formatTime(new Date(message.timestamp))}
                   </p>
                 </div>
+                {chatId && (
+                  <MessageDetailsMenu message={message} chatId={chatId} />
+                )}
               </div>
             ))}
           </div>
@@ -111,22 +109,94 @@ export default function ChatInterface() {
       </CardContent>
 
       <CardFooter className="border-t bg-gray-50 rounded-b-lg pb-6">
-        <form onSubmit={handleSubmit} className="flex w-full gap-2">
+        <fetcher.Form
+          action="/api/chat"
+          method="POST"
+          className="flex w-full gap-2"
+        >
+          <input type="hidden" name="chatId" value={chatId ?? ''} />
           <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            ref={inputRef}
+            name="message"
             placeholder="Type your message here..."
             className="flex-1"
           />
           <Button
             type="submit"
             size="icon"
+            disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Send className="h-4 w-4" />
           </Button>
-        </form>
+        </fetcher.Form>
       </CardFooter>
     </Card>
   );
 }
+
+const MessageDetailsMenu = ({
+  message,
+  chatId,
+}: {
+  message: ChatMessage;
+  chatId: string;
+}) => {
+  const [isButtonOpen, setIsButtonOpen] = useState(false);
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      toast.success('Message deleted successfully');
+    } else if (fetcher.data?.error) {
+      toast.error(fetcher.data.error);
+    }
+  }, [fetcher.data]);
+
+  function handleDelete() {
+    fetcher.submit(
+      { messageId: message.id, chatId },
+      { method: 'DELETE', action: '/api/chat-message' }
+    );
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(message.content);
+    toast('Copied to clipboard', {
+      icon: <CircleCheckIcon className="w-4 h-4" />,
+    });
+  }
+
+  return (
+    <DropdownMenu onOpenChange={(isOpen) => setIsButtonOpen(isOpen)}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            'opacity-0 group-hover:opacity-100 transition-all flex h-6 w-6',
+            isButtonOpen && 'opacity-100'
+          )}
+        >
+          <IconDots />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="w-56"
+        align={message.role === 'user' ? 'end' : 'start'}
+      >
+        {/* <form onSubmit={handleDelete}> */}
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={handleCopy}>
+            <CopyIcon /> Copy
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDelete}>
+            <TrashIcon />
+            Exclude
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        {/* </form> */}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
