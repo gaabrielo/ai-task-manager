@@ -2,7 +2,6 @@ import { faker } from '@faker-js/faker';
 import prisma from 'prisma/prisma';
 
 async function main() {
-  await prisma.post.deleteMany();
   await prisma.user.deleteMany();
   await prisma.task.deleteMany();
 
@@ -21,20 +20,20 @@ async function main() {
   );
 
   // Create 60 posts (3 per user)
-  await Promise.all(
-    users.flatMap((user) =>
-      Array.from({ length: 3 }).map(() =>
-        prisma.post.create({
-          data: {
-            title: faker.lorem.sentence(),
-            content: faker.lorem.paragraphs(2),
-            published: faker.datatype.boolean(),
-            author_id: user.id,
-          },
-        })
-      )
-    )
-  );
+  // await Promise.all(
+  //   users.flatMap((user) =>
+  //     Array.from({ length: 3 }).map(() =>
+  //       prisma.post.create({
+  //         data: {
+  //           title: faker.lorem.sentence(),
+  //           content: faker.lorem.paragraphs(2),
+  //           published: faker.datatype.boolean(),
+  //           author_id: user.id,
+  //         },
+  //       })
+  //     )
+  //   )
+  // );
 
   // Create 20 tasks
   await Promise.all(
@@ -58,19 +57,19 @@ async function main() {
             `it('should ${faker.lorem.sentence()}')`,
             `it('should ${faker.lorem.sentence()}')`,
           ]),
-          content: faker.lorem.paragraphs(3),
-          chat_history: JSON.stringify([
-            {
-              role: 'user',
-              content: faker.lorem.sentence(),
-              timestamp: faker.date.recent(),
-            },
-            {
-              role: 'assistant',
-              content: faker.lorem.paragraph(),
-              timestamp: faker.date.recent(),
-            },
-          ]),
+          // content: faker.lorem.paragraphs(3),
+          // chat_history: JSON.stringify([
+          //   {
+          //     role: 'user',
+          //     content: faker.lorem.sentence(),
+          //     timestamp: faker.date.recent(),
+          //   },
+          //   {
+          //     role: 'assistant',
+          //     content: faker.lorem.paragraph(),
+          //     timestamp: faker.date.recent(),
+          //   },
+          // ]),
         },
       })
     )

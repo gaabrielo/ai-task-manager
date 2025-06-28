@@ -2,7 +2,7 @@ import type { Route } from '.react-router/types/app/routes/+types/task-new';
 import prisma from 'prisma/prisma';
 import { redirect } from 'react-router';
 import TasksChatbot from '~/features/tasks/tasks-chatbot';
-import type { ChatMessage } from '~/features/tasks/types';
+import type { ChatMessage } from '~/generated/prisma';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -11,17 +11,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   let messages: ChatMessage[] = [];
 
   if (chatId) {
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+    const chatMessages = await prisma.chatMessage.findMany({
+      where: { chat_id: chatId },
     });
 
-    if (!chat) {
+    console.log('MESSAGES =>', chatMessages);
+
+    if (!chatMessages || chatMessages.length === 0) {
       return redirect('/task/new');
     }
 
-    messages = chat?.content
-      ? (JSON.parse(chat?.content) as ChatMessage[])
-      : [];
+    messages = chatMessages || [];
   }
 
   return { chatId, messages };

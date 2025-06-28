@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from '~/components/ui/card';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { CircleCheckIcon, CopyIcon, Send, TrashIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
-import type { ChatMessage } from '~/features/tasks/types';
+import type { ChatMessage } from '~/generated/prisma';
 import { useFetcher, useLoaderData, useSubmit } from 'react-router';
 import type { loader } from '~/routes/task-new';
 import { IconDots } from '@tabler/icons-react';
@@ -23,17 +23,19 @@ const defaultMessage: ChatMessage = {
   id: 'default',
   content:
     "Hello! I'm your AI task-management assistant. Share as many details as you can, and I'll provide a clear, step-by-step plan to complete your task.",
-  role: 'bot',
-  timestamp: new Date(),
+  role: 'assistant',
+  created_at: new Date(),
+  updated_at: new Date(),
+  chat_id: '',
 };
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { chatId, messages: messagesHistory } = useLoaderData<typeof loader>();
+  const { chatId, messages } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const isLoading = fetcher.state !== 'idle';
 
@@ -56,10 +58,10 @@ export default function ChatInterface() {
     clearMessageField();
   }, [messages]);
 
-  useEffect(() => {
-    const updatedMessages = [defaultMessage, ...messagesHistory];
-    setMessages(updatedMessages);
-  }, [messagesHistory]);
+  // useEffect(() => {
+  //   const updatedMessages = [defaultMessage, ...messagesHistory];
+  //   setMessages(updatedMessages);
+  // }, [messagesHistory]);
 
   return (
     <Card className="h-full w-full flex flex-col gap-0 p-0 shadow-none overflow-clip relative overflow-y-auto">
@@ -76,7 +78,7 @@ export default function ChatInterface() {
                 }`}
                 ref={msgIndex === messages.length - 1 ? messagesEndRef : null}
               >
-                {message.role === 'bot' && (
+                {message.role === 'assistant' && (
                   <Avatar>
                     <AvatarFallback className="text-sm">Ai</AvatarFallback>
                   </Avatar>
@@ -96,7 +98,7 @@ export default function ChatInterface() {
                         : 'text-gray-500'
                     }`}
                   >
-                    {formatTime(new Date(message.timestamp))}
+                    {formatTime(new Date(message.created_at))}
                   </p>
                 </div>
                 {chatId && (
